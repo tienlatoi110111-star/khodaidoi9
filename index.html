@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QUẢN LÝ KHO ĐẠI ĐỘI 9 - TIỂU ĐOÀN 6</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<style>
+body{font-family:Arial;background:#f2f2f2;margin:0;padding:20px;}
+.container{max-width:1200px;margin:auto;}
+.box{background:white;padding:20px;margin-bottom:20px;border-radius:12px;box-shadow:0 0 10px rgba(0,0,0,0.1);}
+h1,h2,h3{text-align:center;}
+input,button{padding:10px;margin:5px;border-radius:8px;border:1px solid #ccc;}
+button{border:none;color:white;cursor:pointer;}
+.btn-green{background:#16a34a;}
+.btn-red{background:#dc2626;}
+.btn-yellow{background:#ca8a04;}
+.btn-blue{background:#2563eb;}
+.btn-gray{background:#4b5563;}
+.btn-purple{background:#7c3aed;}
+table{width:100%;border-collapse:collapse;margin-top:20px;background:white;}
+th,td{border:1px solid #ddd;padding:10px;text-align:center;}
+th{background:#f8fafc;}
+img{width:100%;max-width:900px;max-height:500px;object-fit:contain;display:block;margin:auto;border-radius:12px;}
+.status{margin-top:10px;font-weight:bold;}
+.table-wrap{overflow-x:auto;}
+
+/* Top bar */
+#topBar{
+  position:fixed;top:0;left:0;right:0;z-index:999;
+  background:white;padding:10px 20px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:8px;
+}
+.top-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.top-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+#syncBar{font-size:13px;font-weight:bold;color:green;}
+
+/* Đẩy nội dung xuống dưới topBar */
+.container{margin-top:70px;}
+
+/* Chỉ admin mới thấy */
+.admin-only{display:none;}
+
+/* Modal đăng nhập */
+#modalLogin{
+  display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.5);z-index:9999;
+  justify-content:center;align-items:center;
+}
+#modalLogin.show{display:flex;}
+#loginCard{
+  background:white;padding:36px;border-radius:20px;
+  box-shadow:0 0 40px rgba(0,0,0,0.3);
+  width:320px;max-width:90vw;text-align:center;
+}
+#loginCard h2{margin:0 0 6px;color:#1e3a5f;}
+#loginCard p{margin:0 0 20px;color:#888;font-size:13px;}
+#loginCard input{
+  width:100%;box-sizing:border-box;
+  margin:6px 0;padding:11px;
+  border-radius:8px;border:1px solid #ddd;font-size:14px;
+}
+#loginErrMsg{color:red;font-size:13px;min-height:18px;margin:6px 0;}
+#loginCard .row{display:flex;gap:8px;margin-top:10px;}
+#loginCard .row button{flex:1;padding:11px;}
+
+/* Modal đổi tài khoản */
+#modalDoiTK{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;}
+#modalDoiTK.show{display:flex;}
+#modalDoiTK .modal-box{background:white;padding:30px;border-radius:16px;box-shadow:0 0 30px rgba(0,0,0,0.3);width:320px;max-width:90vw;}
+#modalDoiTK h3{margin-top:0;text-align:center;color:#7c3aed;}
+#modalDoiTK input{width:100%;box-sizing:border-box;margin:6px 0;padding:10px;border-radius:8px;border:1px solid #ccc;}
+#modalDoiTK .row{display:flex;gap:8px;margin-top:10px;}
+#modalDoiTK .row button{flex:1;padding:10px;}
+#modalMsg{color:red;font-size:13px;margin-top:6px;min-height:18px;}
+
+/* Badge khách/admin */
+.badge{padding:4px 10px;border-radius:20px;font-size:13px;font-weight:bold;}
+.badge-guest{background:#f1f5f9;color:#64748b;}
+.badge-admin{background:#dcfce7;color:#16a34a;}
+
+@media(max-width:768px){
+  body{padding:8px;}
+  .container{margin-top:120px;}
+  #topBar{flex-direction:column;align-items:flex-start;padding:10px;}
+  input,button{width:100%;box-sizing:border-box;margin:4px 0;}
+  th,td{font-size:12px;padding:6px;}
+}
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div id="topBar">
+  <div class="top-left">
+    <span id="badgeUser" class="badge badge-guest">👤 Khách</span>
+    <span id="syncBar">⏳ Đang kết nối...</span>
+  </div>
+  <div class="top-right">
+    <!-- Chỉ khách thấy nút đăng nhập -->
+    <button class="btn-blue" id="btnDangNhap" onclick="moModalLogin()" style="padding:8px 14px;">🔐 Đăng nhập</button>
+    <!-- Chỉ admin thấy -->
+    <button class="btn-purple admin-only" onclick="moModalDoiTK()" style="padding:8px 14px;">🔑 Đổi tài khoản</button>
+    <button class="btn-red admin-only" onclick="dangXuat()" style="padding:8px 14px;">Đăng xuất</button>
+  </div>
+</div>
+
+<!-- Modal đăng nhập -->
+<div id="modalLogin">
+  <div id="loginCard">
+    <h2>🔐 Đăng nhập</h2>
+    <p>QUẢN LÝ KHO ĐẠI ĐỘI 9 - TIỂU ĐOÀN 6</p>
+    <input type="text" id="inputTK" placeholder="Tên tài khoản" autocomplete="username">
+    <input type="password" id="inputMK" placeholder="Mật khẩu" autocomplete="current-password">
+    <div id="loginErrMsg"></div>
+    <div class="row">
+      <button class="btn-gray" onclick="dongModalLogin()">Hủy</button>
+      <button class="btn-blue" onclick="dangNhap()">Đăng nhập</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal đổi tài khoản/mật khẩu -->
+<div id="modalDoiTK">
+  <div class="modal-box">
+    <h3>🔑 Đổi tài khoản / Mật khẩu</h3>
+    <label style="font-size:13px;color:#555;">Mật khẩu hiện tại</label>
+    <input type="password" id="mkCu" placeholder="Nhập mật khẩu hiện tại">
+    <hr style="margin:12px 0;border:none;border-top:1px solid #eee;">
+    <label style="font-size:13px;color:#555;">Tên tài khoản mới</label>
+    <input type="text" id="tkMoi" placeholder="Để trống nếu không đổi">
+    <label style="font-size:13px;color:#555;">Mật khẩu mới</label>
+    <input type="password" id="mkMoi" placeholder="Để trống nếu không đổi">
+    <div id="modalMsg"></div>
+    <div class="row">
+      <button class="btn-gray" onclick="dongModal()">Hủy</button>
+      <button class="btn-purple" onclick="doiTaiKhoan()">✅ Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="box"><h1>📦 QUẢN LÝ KHO ĐẠI ĐỘI 9 - TIỂU ĐOÀN 6</h1></div>
+
+  <!-- Sơ đồ kho: khách xem, admin upload -->
+  <div class="box">
+    <h2>🖼️ Sơ đồ kho</h2>
+    <div class="admin-only">
+      <input type="file" id="chonAnh" accept=".jpg,.jpeg,.png,.webp">
+      <button class="btn-blue" type="button" onclick="taiAnhLen()">Tải ảnh lên</button>
+      <br><br>
+    </div>
+    <img id="anhKho">
+  </div>
+
+  <!-- Tìm kiếm: khách dùng được -->
+  <div class="box">
+    <h3>🔍 Tìm kiếm</h3>
+    <input id="timkiem" placeholder="Nhập tên vật chất" onkeyup="render()">
+  </div>
+
+  <!-- Tồn kho: khách xem được -->
+  <div class="box">
+    <h3>📊 Tồn kho</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Loại vật chất</th><th>Số lượng</th></tr></thead>
+        <tbody id="kho"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Lịch sử: khách xem được -->
+  <div class="box">
+    <h3>📜 Lịch sử thao tác</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Vật chất</th><th>Số lượng</th><th>Hành động</th><th>Người</th><th>Thời gian</th></tr></thead>
+        <tbody id="log"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Chỉ admin thấy: Nạp Excel -->
+  <div class="box admin-only">
+    <h3>📥 Nạp dữ liệu Excel</h3>
+    <input type="file" id="excelFile" accept=".xlsx,.xls">
+    <button class="btn-blue" onclick="docExcel()">Nạp Excel</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <!-- Chỉ admin thấy: Quản lý vật chất -->
+  <div class="box admin-only">
+    <h3>➕ Quản lý vật chất</h3>
+    <input id="ten" list="danhSachVatChat" placeholder="Tên vật chất">
+    <datalist id="danhSachVatChat"></datalist>
+    <input id="sl" type="number" min="1" placeholder="Số lượng">
+    <input id="nguoi" placeholder="Tên người">
+    <br>
+    <button class="btn-green" onclick="nhap()">Nhập</button>
+    <button class="btn-red" onclick="xuat()">Xuất</button>
+    <button class="btn-yellow" onclick="muon()">Mượn</button>
+    <button class="btn-gray" onclick="tra()">Trả</button>
+  </div>
+
+  <!-- Chỉ admin thấy: Công cụ -->
+  <div class="box admin-only">
+    <button class="btn-blue" onclick="xuatExcel()">📊 Xuất Excel</button>
+    <button class="btn-gray" onclick="xoaLichSu()">🗑️ Xóa lịch sử</button>
+    <button class="btn-red" onclick="xoaToanBo()">❌ Xóa toàn bộ dữ liệu</button>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDH6ezWQhIPmk5pWtd2l48n1oWOVgX1u_g",
+  authDomain: "thanhkho-b4c69.firebaseapp.com",
+  projectId: "thanhkho-b4c69",
+  storageBucket: "thanhkho-b4c69.firebasestorage.app",
+  messagingSenderId: "528755293258",
+  appId: "1:528755293258:web:92d177a31ca40c17a3bab3"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const DOC_ID = "kho_b1c1";
+
+let daDangNhap = false;
+let kho = [];
+let log = [];
+let TAI_KHOAN = "admin";
+let MAT_KHAU  = "123456";
+
+function syncBar(msg, color){
+  const el = document.getElementById("syncBar");
+  el.innerText = msg; el.style.color = color||"#111";
+}
+
+// Lắng nghe Firestore real-time (khách cũng nhận được)
+onSnapshot(doc(db,"kho",DOC_ID),(snap)=>{
+  if(snap.exists()){
+    const d=snap.data();
+    kho=d.kho||[]; log=d.log||[];
+    if(d.taiKhoan) TAI_KHOAN=d.taiKhoan;
+    if(d.matKhau)  MAT_KHAU=d.matKhau;
+    if(d.anhKho)   document.getElementById("anhKho").src=d.anhKho;
+    render();
+  }
+  syncBar("🟢 Đã kết nối","green");
+},(err)=>{
+  syncBar("🔴 Mất kết nối","red");
+  console.error(err);
+});
+
+async function save(extra){
+  try{
+    syncBar("💾 Đang lưu...","orange");
+    const payload={kho,log,taiKhoan:TAI_KHOAN,matKhau:MAT_KHAU,...extra};
+    await setDoc(doc(db,"kho",DOC_ID),payload,{merge:true});
+    syncBar("🟢 Đã lưu xong","green");
+  }catch(e){
+    syncBar("🔴 Lỗi: "+e.message,"red");
+    alert("Lỗi Firebase: "+e.message);
+  }
+}
+
+// Cập nhật giao diện theo quyền
+function capNhatQuyen(){
+  const els = document.querySelectorAll(".admin-only");
+  els.forEach(el => el.style.display = daDangNhap ? "block" : "none");
+  // Nút trong flex row cần display flex không phải block
+  document.querySelectorAll(".admin-only button, .top-right .admin-only").forEach(el => {
+    el.style.display = daDangNhap ? "inline-block" : "none";
+  });
+  document.getElementById("btnDangNhap").style.display = daDangNhap ? "none" : "inline-block";
+  document.getElementById("badgeUser").className = daDangNhap ? "badge badge-admin" : "badge badge-guest";
+  document.getElementById("badgeUser").innerText = daDangNhap ? "✅ Quản trị viên" : "👤 Khách";
+}
+
+// Modal đăng nhập
+window.moModalLogin = function(){
+  document.getElementById("inputTK").value="";
+  document.getElementById("inputMK").value="";
+  document.getElementById("loginErrMsg").innerText="";
+  document.getElementById("modalLogin").classList.add("show");
+  setTimeout(()=>document.getElementById("inputTK").focus(),100);
+};
+window.dongModalLogin = function(){ document.getElementById("modalLogin").classList.remove("show"); };
+
+document.getElementById("inputMK").addEventListener("keydown",e=>{ if(e.key==="Enter") dangNhap(); });
+document.getElementById("inputTK").addEventListener("keydown",e=>{ if(e.key==="Enter") document.getElementById("inputMK").focus(); });
+document.getElementById("modalLogin").addEventListener("click",function(e){ if(e.target===this) dongModalLogin(); });
+
+window.dangNhap = function(){
+  const tk=document.getElementById("inputTK").value.trim();
+  const mk=document.getElementById("inputMK").value.trim();
+  const err=document.getElementById("loginErrMsg");
+  if(!tk||!mk){ err.innerText="⚠️ Vui lòng nhập đủ thông tin!"; return; }
+  if(tk===TAI_KHOAN && mk===MAT_KHAU){
+    daDangNhap=true;
+    localStorage.setItem("daDangNhap_"+DOC_ID,"true");
+    dongModalLogin();
+    capNhatQuyen();
+  }else{
+    err.innerText="❌ Sai tài khoản hoặc mật khẩu!";
+    document.getElementById("inputMK").value="";
+  }
+};
+
+window.dangXuat = function(){
+  if(!confirm("Đăng xuất?"))return;
+  daDangNhap=false;
+  localStorage.removeItem("daDangNhap_"+DOC_ID);
+  capNhatQuyen();
+};
+
+// Modal đổi tài khoản
+window.moModalDoiTK = function(){
+  document.getElementById("mkCu").value="";
+  document.getElementById("tkMoi").value="";
+  document.getElementById("mkMoi").value="";
+  document.getElementById("modalMsg").innerText="";
+  document.getElementById("modalDoiTK").classList.add("show");
+};
+window.dongModal = function(){ document.getElementById("modalDoiTK").classList.remove("show"); };
+window.doiTaiKhoan = async function(){
+  const mkCu=document.getElementById("mkCu").value.trim();
+  const tkMoi=document.getElementById("tkMoi").value.trim();
+  const mkMoi=document.getElementById("mkMoi").value.trim();
+  const msg=document.getElementById("modalMsg");
+  if(mkCu!==MAT_KHAU){ msg.innerText="❌ Mật khẩu hiện tại không đúng!"; msg.style.color="red"; return; }
+  if(!tkMoi&&!mkMoi){ msg.innerText="⚠️ Nhập tài khoản hoặc mật khẩu mới!"; msg.style.color="orange"; return; }
+  if(tkMoi) TAI_KHOAN=tkMoi;
+  if(mkMoi) MAT_KHAU=mkMoi;
+  await save();
+  dongModal();
+  alert("✅ Đổi thành công!\nTài khoản: "+TAI_KHOAN+"\nMật khẩu: "+MAT_KHAU);
+};
+document.getElementById("modalDoiTK").addEventListener("click",function(e){ if(e.target===this) dongModal(); });
+
+// Render
+function setStatus(msg,color="green"){ const el=document.getElementById("status"); el.innerText=msg; el.style.color=color; }
+function renderDanhSach(){ document.getElementById("danhSachVatChat").innerHTML=kho.map(i=>`<option value="${i.ten}">`).join(""); }
+function render(){
+  const tukhoa=document.getElementById("timkiem").value.toLowerCase();
+  const data=kho.filter(i=>i.ten.toLowerCase().includes(tukhoa));
+  document.getElementById("kho").innerHTML=data.map(i=>`<tr><td>${i.ten}</td><td>${i.sl}</td></tr>`).join("");
+  document.getElementById("log").innerHTML=log.map(i=>`<tr><td>${i.ten}</td><td>${i.sl}</td><td>${i.action}</td><td>${i.nguoi}</td><td>${i.time}</td></tr>`).join("");
+  renderDanhSach();
+}
+window.render=render;
+
+function getItem(ten){ return kho.find(i=>i.ten.toLowerCase()===ten.toLowerCase()); }
+function ghiLog(ten,sl,action,nguoi){ log.unshift({ten,sl,action,nguoi,time:new Date().toLocaleString("vi-VN")}); }
+function layInput(){ return {ten:document.getElementById("ten").value.trim(),sl:parseInt(document.getElementById("sl").value),nguoi:document.getElementById("nguoi").value.trim()}; }
+
+window.nhap = async function(){
+  const{ten,sl,nguoi}=layInput(); if(!ten||!sl){alert("Nhập thiếu thông tin");return;}
+  let item=getItem(ten); if(!item){item={ten,sl:0};kho.push(item);}
+  item.sl+=sl; ghiLog(ten,sl,"Nhập",nguoi); await save();
+};
+window.xuat = async function(){
+  const{ten,sl,nguoi}=layInput(); const item=getItem(ten);
+  if(!item){alert("Không có vật chất này");return;}
+  if(item.sl<sl){alert("Không đủ số lượng");return;}
+  item.sl-=sl; ghiLog(ten,sl,"Xuất",nguoi); await save();
+};
+window.muon = async function(){
+  const{ten,sl,nguoi}=layInput(); const item=getItem(ten);
+  if(!item){alert("Không có vật chất này");return;}
+  if(item.sl<sl){alert("Không đủ số lượng");return;}
+  item.sl-=sl; ghiLog(ten,sl,"Mượn",nguoi); await save();
+};
+window.tra = async function(){
+  const{ten,sl,nguoi}=layInput(); const item=getItem(ten);
+  if(!item){alert("Không có vật chất này");return;}
+  item.sl+=sl; ghiLog(ten,sl,"Trả",nguoi); await save();
+};
+window.docExcel = function(){
+  const file=document.getElementById("excelFile").files[0];
+  if(!file){setStatus("Chưa chọn file Excel","red");return;}
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    const wb=XLSX.read(new Uint8Array(e.target.result),{type:"array"});
+    const json=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    kho=json.map(r=>({ten:r["Tên vật chất"],sl:Number(r["Số lượng"])}));
+    await save(); setStatus("✅ Đã nạp Excel thành công");
+  };
+  reader.readAsArrayBuffer(file);
+};
+window.taiAnhLen = function(){
+  const input=document.getElementById("chonAnh");
+  if(!input.files.length){alert("Chưa chọn ảnh");return;}
+  const file=input.files[0];
+  if(file.size>20000000){alert("Ảnh quá lớn");return;}
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const img=new Image();
+    img.onload=async function(){
+      const canvas=document.createElement("canvas");
+      let w=img.width,h=img.height;
+      if(w>1200){h=Math.round(h*1200/w);w=1200;}
+      canvas.width=w;canvas.height=h;
+      canvas.getContext("2d").drawImage(img,0,0,w,h);
+      const dataUrl=canvas.toDataURL("image/jpeg",0.7);
+      document.getElementById("anhKho").src=dataUrl;
+      await save({anhKho:dataUrl}); alert("✅ Tải ảnh thành công");
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+window.xoaLichSu = async function(){ if(!confirm("Xóa toàn bộ lịch sử?"))return; log=[]; await save(); };
+window.xoaToanBo = async function(){
+  if(!confirm("⚠️ Xóa TOÀN BỘ dữ liệu?\nKhông thể hoàn tác!"))return;
+  kho=[];log=[]; await save();
+};
+window.xuatExcel = function(){
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(kho.map(i=>({"Tên vật chất":i.ten,"Số lượng":i.sl}))),"TonKho");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(log.map(i=>({"Tên vật chất":i.ten,"Số lượng":i.sl,"Hành động":i.action,"Người":i.nguoi,"Thời gian":i.time}))),"LichSu");
+  XLSX.writeFile(wb,"quanly_kho.xlsx");
+};
+
+// Khởi động
+if(localStorage.getItem("daDangNhap_"+DOC_ID)==="true") daDangNhap=true;
+capNhatQuyen();
+render();
+</script>
+</body>
+</html>
