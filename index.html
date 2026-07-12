@@ -41,7 +41,9 @@ img{width:100%;max-width:900px;max-height:500px;object-fit:contain;display:block
 .container{margin-top:70px;}
 
 /* Chỉ admin mới thấy */
-.admin-only{display:none;}
+.admin-only{display:none !important;}
+.admin-only.show-admin{display:block !important;}
+button.admin-only.show-admin, span.admin-only.show-admin{display:inline-block !important;}
 
 /* Modal đăng nhập */
 #modalLogin{
@@ -99,9 +101,7 @@ img{width:100%;max-width:900px;max-height:500px;object-fit:contain;display:block
     <span id="syncBar">⏳ Đang kết nối...</span>
   </div>
   <div class="top-right">
-    <!-- Chỉ khách thấy nút đăng nhập -->
     <button class="btn-blue" id="btnDangNhap" onclick="moModalLogin()" style="padding:8px 14px;">🔐 Đăng nhập</button>
-    <!-- Chỉ admin thấy -->
     <button class="btn-purple admin-only" onclick="moModalDoiTK()" style="padding:8px 14px;">🔑 Đổi tài khoản</button>
     <button class="btn-red admin-only" onclick="dangXuat()" style="padding:8px 14px;">Đăng xuất</button>
   </div>
@@ -145,24 +145,23 @@ img{width:100%;max-width:900px;max-height:500px;object-fit:contain;display:block
 
   <div class="box"><h1>📦 QUẢN LÝ KHO ĐẠI ĐỘI 9 - TIỂU ĐOÀN 6</h1></div>
 
-  <!-- Sơ đồ kho: khách xem, admin upload -->
+  <!-- Sơ đồ kho -->
   <div class="box">
     <h2>🖼️ Sơ đồ kho</h2>
-    <div class="admin-only">
+    <div class="admin-only" style="margin-bottom: 15px;">
       <input type="file" id="chonAnh" accept=".jpg,.jpeg,.png,.webp">
       <button class="btn-blue" type="button" onclick="taiAnhLen()">Tải ảnh lên</button>
-      <br><br>
     </div>
-    <img id="anhKho">
+    <img id="anhKho" src="" alt="Chưa có sơ đồ kho">
   </div>
 
-  <!-- Tìm kiếm: khách dùng được -->
+  <!-- Tìm kiếm -->
   <div class="box">
     <h3>🔍 Tìm kiếm</h3>
     <input id="timkiem" placeholder="Nhập tên vật chất" onkeyup="render()">
   </div>
 
-  <!-- Tồn kho: khách xem được -->
+  <!-- Tồn kho -->
   <div class="box">
     <h3>📊 Tồn kho</h3>
     <div class="table-wrap">
@@ -173,7 +172,7 @@ img{width:100%;max-width:900px;max-height:500px;object-fit:contain;display:block
     </div>
   </div>
 
-  <!-- Lịch sử: khách xem được -->
+  <!-- Lịch sử -->
   <div class="box">
     <h3>📜 Lịch sử thao tác</h3>
     <div class="table-wrap">
@@ -184,7 +183,7 @@ img{width:100%;max-width:900px;max-height:500px;object-fit:contain;display:block
     </div>
   </div>
 
-  <!-- Chỉ admin thấy: Nạp Excel -->
+  <!-- Nạp Excel -->
   <div class="box admin-only">
     <h3>📥 Nạp dữ liệu Excel</h3>
     <input type="file" id="excelFile" accept=".xlsx,.xls">
@@ -192,7 +191,7 @@ img{width:100%;max-width:900px;max-height:500px;object-fit:contain;display:block
     <div class="status" id="status"></div>
   </div>
 
-  <!-- Chỉ admin thấy: Quản lý vật chất -->
+  <!-- Quản lý vật chất -->
   <div class="box admin-only">
     <h3>➕ Quản lý vật chất</h3>
     <input id="ten" list="danhSachVatChat" placeholder="Tên vật chất">
@@ -206,8 +205,8 @@ img{width:100%;max-width:900px;max-height:500px;object-fit:contain;display:block
     <button class="btn-gray" onclick="tra()">Trả</button>
   </div>
 
-  <!-- Chỉ admin thấy: Công cụ -->
-  <div class="box admin-only">
+  <!-- Công cụ quản trị -->
+  <div class="box admin-only" style="text-align: center;">
     <button class="btn-blue" onclick="xuatExcel()">📊 Xuất Excel</button>
     <button class="btn-gray" onclick="xoaLichSu()">🗑️ Xóa lịch sử</button>
     <button class="btn-red" onclick="xoaToanBo()">❌ Xóa toàn bộ dữ liệu</button>
@@ -219,18 +218,20 @@ img{width:100%;max-width:900px;max-height:500px;object-fit:contain;display:block
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// Sử dụng chung cấu hình Firebase của dự án kho-b2
 const firebaseConfig = {
-  apiKey: "AIzaSyDH6ezWQhIPmk5pWtd2l48n1oWOVgX1u_g",
-  authDomain: "thanhkho-b4c69.firebaseapp.com",
-  projectId: "thanhkho-b4c69",
-  storageBucket: "thanhkho-b4c69.firebasestorage.app",
-  messagingSenderId: "528755293258",
-  appId: "1:528755293258:web:92d177a31ca40c17a3bab3"
+  apiKey: "AIzaSyBvTqWxrc7b8knKOtWvW5WeETeTmLxr9xM",
+  authDomain: "kho-b2.firebaseapp.com",
+  projectId: "kho-b2",
+  storageBucket: "kho-b2.firebasestorage.app",
+  messagingSenderId: "635161986390",
+  appId: "1:635161986390:web:ffc11b0fc249bb161942f7",
+  measurementId: "G-4XE0FQ98SN"
 };
 
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
-const DOC_ID = "kho_b1c1";
+const DOC_ID = "kho_c9d6"; // Tạo vùng lưu trữ riêng biệt hoàn toàn cho kho c9d6
 
 let daDangNhap = false;
 let kho = [];
@@ -240,10 +241,9 @@ let MAT_KHAU  = "123456";
 
 function syncBar(msg, color){
   const el = document.getElementById("syncBar");
-  el.innerText = msg; el.style.color = color||"#111";
+  if(el) { el.innerText = msg; el.style.color = color||"#111"; }
 }
 
-// Lắng nghe Firestore real-time (khách cũng nhận được)
 onSnapshot(doc(db,"kho",DOC_ID),(snap)=>{
   if(snap.exists()){
     const d=snap.data();
@@ -253,7 +253,7 @@ onSnapshot(doc(db,"kho",DOC_ID),(snap)=>{
     if(d.anhKho)   document.getElementById("anhKho").src=d.anhKho;
     render();
   }
-  syncBar("🟢 Đã kết nối","green");
+  syncBar("🟢 Đã kết nối thành công kho b1c9","green");
 },(err)=>{
   syncBar("🔴 Mất kết nối","red");
   console.error(err);
@@ -271,20 +271,17 @@ async function save(extra){
   }
 }
 
-// Cập nhật giao diện theo quyền
 function capNhatQuyen(){
   const els = document.querySelectorAll(".admin-only");
-  els.forEach(el => el.style.display = daDangNhap ? "block" : "none");
-  // Nút trong flex row cần display flex không phải block
-  document.querySelectorAll(".admin-only button, .top-right .admin-only").forEach(el => {
-    el.style.display = daDangNhap ? "inline-block" : "none";
+  els.forEach(el => {
+    if(daDangNhap) el.classList.add("show-admin");
+    else el.classList.remove("show-admin");
   });
   document.getElementById("btnDangNhap").style.display = daDangNhap ? "none" : "inline-block";
   document.getElementById("badgeUser").className = daDangNhap ? "badge badge-admin" : "badge badge-guest";
   document.getElementById("badgeUser").innerText = daDangNhap ? "✅ Quản trị viên" : "👤 Khách";
 }
 
-// Modal đăng nhập
 window.moModalLogin = function(){
   document.getElementById("inputTK").value="";
   document.getElementById("inputMK").value="";
@@ -321,7 +318,6 @@ window.dangXuat = function(){
   capNhatQuyen();
 };
 
-// Modal đổi tài khoản
 window.moModalDoiTK = function(){
   document.getElementById("mkCu").value="";
   document.getElementById("tkMoi").value="";
@@ -345,8 +341,7 @@ window.doiTaiKhoan = async function(){
 };
 document.getElementById("modalDoiTK").addEventListener("click",function(e){ if(e.target===this) dongModal(); });
 
-// Render
-function setStatus(msg,color="green"){ const el=document.getElementById("status"); el.innerText=msg; el.style.color=color; }
+function setStatus(msg,color="green"){ const el=document.getElementById("status"); if(el) { el.innerText=msg; el.style.color=color; } }
 function renderDanhSach(){ document.getElementById("danhSachVatChat").innerHTML=kho.map(i=>`<option value="${i.ten}">`).join(""); }
 function render(){
   const tukhoa=document.getElementById("timkiem").value.toLowerCase();
@@ -426,10 +421,9 @@ window.xuatExcel = function(){
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(kho.map(i=>({"Tên vật chất":i.ten,"Số lượng":i.sl}))),"TonKho");
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(log.map(i=>({"Tên vật chất":i.ten,"Số lượng":i.sl,"Hành động":i.action,"Người":i.nguoi,"Thời gian":i.time}))),"LichSu");
-  XLSX.writeFile(wb,"quanly_kho.xlsx");
+  XLSX.writeFile(wb,"quanly_kho_b1c9.xlsx");
 };
 
-// Khởi động
 if(localStorage.getItem("daDangNhap_"+DOC_ID)==="true") daDangNhap=true;
 capNhatQuyen();
 render();
